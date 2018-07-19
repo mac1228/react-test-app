@@ -13,15 +13,14 @@ class FilterableProductTable extends React.Component <any, any> {
   }
 
   handleCheckboxChange(e) {
-    this.setState({onlyShowInStock: e.target.value});
-    console.log(this.state.onlyShowInStock);
+    this.setState({onlyShowInStock: e.target.checked});
   }
 
   render () {
     return (
       <div>
         <SearchBar searchTerm={this.state.searchTerm} onInputChange={this.handleInputChange} onlyShowInStock={this.state.onlyShowInStock} onCheckboxChange={this.handleCheckboxChange}/>
-        <ProductTable data={this.props.products} />
+        <ProductTable data={this.props.products} searchTerm={this.state.searchTerm} onlyShowInStock={this.state.onlyShowInStock}/>
       </div>
     );
   }
@@ -36,7 +35,7 @@ class SearchBar extends React.Component <any, any> {
     return (
       <div>
         <input style={this.divStyle} type="text" placeholder="Search..." value={this.props.searchTerm} onChange={this.props.onInputChange} />
-        <input type="checkbox" value={this.props.onlyShowInStock} onChange={this.props.onCheckboxChange} /> Only show products in stock
+        <input type="checkbox" checked={this.props.onlyShowInStock} onChange={this.props.onCheckboxChange} /> Only show products in stock
       </div>
     );
   }
@@ -46,13 +45,24 @@ class ProductTable extends React.Component <any, any> {
   private categories = {};
   private table = [];
 
-  constructor(props) {
-    super(props);
-    this.buildTable();
-  }
-
   buildTable() {
-    this.props.data.forEach(item => {
+    this.categories = {};
+    this.table = [];
+    if (this.props.onlyShowInStock) {
+      this.props.data.forEach(item => {
+        if(item.stocked) {
+          this.addProduct(item);
+        }
+      });
+    } else {
+      this.props.data.forEach(item => {
+        this.addProduct(item);
+      });
+    }
+  } 
+
+  addProduct(item) {
+    if (item.name.toLowerCase().startsWith(this.props.searchTerm.toLowerCase())) {
       if (this.categories[item.category] !== true) {
         this.categories[item.category] = true;
         this.table.push(<ProductCategoryRow name={item.category} key={item.category}/>);
@@ -61,10 +71,11 @@ class ProductTable extends React.Component <any, any> {
         let index = this.table.indexOf(item.category);
         this.table.splice(index, 0, <ProductRow name={item.name} price={item.price} stocked={item.stocked} key={item.name}/>);
       }
-    });
-  } 
+    }
+  }
 
   render () {
+    this.buildTable();
     return (
       <div>
         <div> Name Price</div>
